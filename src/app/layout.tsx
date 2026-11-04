@@ -33,6 +33,7 @@ export default function RootLayout({
             FolioForge
           </Link>
           <p>Made for your files. Built for your privacy.</p>
+          <Link href="/privacy">Privacy policy</Link>
           <a href="https://github.com/AvishShair/folioforge">
             Source on GitHub ↗
           </a>

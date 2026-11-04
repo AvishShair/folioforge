@@ -46,7 +46,7 @@ export default function Home() {
       <div className="benefits">
         <span>
           <ShieldCheck />
-          Files stay on your device
+          Files processed on your device
         </span>
         <span>
           <Zap />
@@ -54,7 +54,7 @@ export default function Home() {
         </span>
         <span>
           <Fingerprint />
-          No tracking or uploads
+          No tracking. Optional Drive storage.
         </span>
       </div>
       <ToolCatalog />
@@ -68,9 +68,10 @@ export default function Home() {
             need a round trip.
           </h2>
           <p>
-            FolioForge processes files locally using your browser. No document
-            uploads, no cloud storage, and no accounts. Close the tab and your
-            working files are gone.
+            FolioForge processes files locally in your browser without a
+            FolioForge account. Optional Google Drive storage transfers only the
+            files you choose, directly between your browser and Google. Close
+            the tab to release working files.
           </p>
           <p className="muted">
             Your browser’s memory sets the limits: 50 MB per file, 150 MB per
@@ -83,7 +84,7 @@ export default function Home() {
         {[
           [
             "Are my files uploaded anywhere?",
-            "No. Document contents stay in browser memory. The app downloads its code and PDF rendering assets, but sends no files to a server.",
+            "Device-only work stays in browser memory. If you enable Google Drive, files you choose to open or save transfer directly between your browser and Google. FolioForge servers never receive your documents or Google access tokens.",
           ],
           [
             "Does compression always make an image smaller?",

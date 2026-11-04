@@ -16,8 +16,10 @@ PDF text/image editing, annotations/drawing, form filling/creation, electronic s
 
 ## Deferred infrastructure-dependent services
 
-High-fidelity Office conversions, remote cloud-storage integrations, durable shareable links, and a hosted public processing API are deferred under the browser-only decision. No backend, account system, third-party document processor, or file storage was introduced.
+High-fidelity Office conversions, other cloud providers, durable shareable links, and a hosted public processing API are deferred under the browser-only decision. No backend, account system, third-party document processor, or file storage was introduced.
 
 ## Verification
 
 Strict TypeScript, ESLint, production build, 11 Vitest tests and 10 Playwright workflows pass locally. The new browser tests perform real OCR on synthetic image and scanned-PDF fixtures, decode grayscale output, reopen generated PDFs, verify source metadata/font resources are absent from rasterized output, and render a fully redacted page to confirm black pixels. The four non-OCR additions are exercised at a 375px mobile viewport. Broader cross-browser testing and an independent security review of redaction remain outstanding.
+
+Optional browser-direct Google Drive storage has now been implemented under the later BYOS request. Deployment configuration and real-account acceptance testing remain operator tasks; see GOOGLE_DRIVE_SETUP.md.

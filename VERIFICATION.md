@@ -1,5 +1,17 @@
 # Verification record
 
+## Google Drive integration — 4 November 2026
+
+- Strict TypeScript, ESLint (no warnings), and production builds passed.
+- Vitest: 38 tests passed, including 27 new Google authorization/Drive cases.
+- Configured synthetic build: 12 Playwright tests passed (10 existing processing/browser workflows plus desktop and 390px mobile Drive round trips). The alternate unconfigured test was deliberately skipped in this build.
+- Unconfigured production build: the separate guest-mode test passed, confirming Drive is unavailable and no Google scripts are loaded. The two configured mock tests were deliberately skipped in this build.
+- Drive browser tests mock GIS, official Picker interfaces, and Drive REST responses, but use the real local PDF processing engine. They reopen the uploaded PDF to verify rotation, check the original remains unchanged, reject duplicate saves, test popup/Picker cancellation paths, disconnect, download locally, and process another guest file. Mobile layout had no horizontal overflow and its screenshot was visually inspected.
+- API tests cover scope restriction, expiry, late authorization callbacks, Picker disposal, MIME/size/stream validation, permission and quota errors, chunk progress, offline recovery/status probes, cancellation/retry, session expiry, 401 reconnect, account switching, reserved-ID conflicts, and rejection of foreign upload URLs. No dependency changes were needed.
+- Real Google OAuth/Picker, browser cookie/CORS behavior, restricted key configuration, and public-app verification remain **unverified** until the operator configures Google Cloud and completes [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md). No real Google credentials were used or deployed. The production feature remains disabled without the three public values.
+
+Earlier verification records follow and describe their respective releases.
+
 Checked locally on 4 November 2026, Windows, Node.js 26.2.0, npm 11.13.0, Chromium 156 via Playwright.
 
 | Check                       | Result                                                               |

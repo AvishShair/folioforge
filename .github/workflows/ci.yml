@@ -17,8 +17,14 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+        env:
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: mocked-client.apps.googleusercontent.com
+          NEXT_PUBLIC_GOOGLE_PROJECT_NUMBER: "123456789"
+          NEXT_PUBLIC_GOOGLE_PICKER_API_KEY: mocked-picker-key
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+        env:
+          DRIVE_MOCK_TESTS: "1"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

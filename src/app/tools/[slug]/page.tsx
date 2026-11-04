@@ -47,10 +47,13 @@ export default async function ToolPage({
             {tool.input === "pdf"
               ? "a PDF document"
               : "JPEG, PNG, or WebP images"}{" "}
-            from your device.
+            from your device or optional Google Drive storage.
           </li>
           <li>Adjust the settings and process your files locally.</li>
-          <li>Download your result, then reset to clear the workspace.</li>
+          <li>
+            Download your result or save a new copy to Google Drive, then reset
+            to clear working files.
+          </li>
         </ol>
         <h3>Good to know</h3>
         {tool.limitations.map((l) => (
@@ -66,7 +69,8 @@ export default async function ToolPage({
         )}
         <p>
           50 MB per input, 150 MB combined, up to 500 PDF pages or 32 megapixels
-          per image. No files leave this browser.
+          per image. Files are processed in this browser. Optional Drive
+          transfers go directly to Google.
         </p>
       </section>
       <section className="related">

@@ -24,6 +24,7 @@ import {
   validateFile,
 } from "@/lib/validation";
 import { Button } from "./ui/button";
+import { DriveControls } from "./drive-controls";
 import { SettingsPanel } from "./settings";
 import { ImagePreview, PdfPreview } from "./previews";
 const bytes = (n: number) =>
@@ -38,6 +39,7 @@ export function Workspace({ id }: { id: ToolId }) {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [adding, setAdding] = useState(false),
+    [cloudBusy, setCloudBusy] = useState(false),
     [status, setStatus] = useState(""),
     [progress, setProgress] = useState<[number, number] | null>(null);
   const input = useRef<HTMLInputElement>(null),
@@ -50,7 +52,7 @@ export function Workspace({ id }: { id: ToolId }) {
     },
     [],
   );
-  async function add(incoming: File[]) {
+  async function add(incoming: File[], signal?: AbortSignal) {
     if (busy || adding) return;
     setAdding(true);
     setError("");
@@ -68,7 +70,7 @@ export function Workspace({ id }: { id: ToolId }) {
         const { loadPdf } = await import("@/lib/pdf");
         order = (await loadPdf(await next[0].arrayBuffer())).getPageIndices();
       }
-      if (current === generation.current) {
+      if (current === generation.current && !signal?.aborted) {
         setFiles(next);
         if (id === "organize-pdf") set((v) => ({ ...v, order }));
       }
@@ -160,7 +162,7 @@ export function Workspace({ id }: { id: ToolId }) {
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
-            void add(Array.from(e.dataTransfer.files));
+            if (!cloudBusy) void add(Array.from(e.dataTransfer.files));
           }}
         >
           <Upload size={30} />
@@ -168,7 +170,7 @@ export function Workspace({ id }: { id: ToolId }) {
           <p>or choose them from your device</p>
           <Button
             variant="outline"
-            disabled={busy || adding}
+            disabled={busy || adding || cloudBusy}
             onClick={() => input.current?.click()}
           >
             {adding ? "Checking files…" : "Choose files"}
@@ -176,6 +178,7 @@ export function Workspace({ id }: { id: ToolId }) {
           <input
             ref={input}
             type="file"
+            disabled={busy || adding || cloudBusy}
             aria-label="Upload files"
             accept={tool.accepted}
             multiple={tool.maxFiles > 1}
@@ -186,12 +189,12 @@ export function Workspace({ id }: { id: ToolId }) {
             {tool.accepted.replaceAll(",", " · ")} · Up to 50 MB each
           </small>
         </div>
-        <fieldset disabled={busy || adding} className="file-list">
+        <fieldset disabled={busy || adding || cloudBusy} className="file-list">
           {files.map((file, index) => (
             <div
               className="file-item"
               key={`${file.name}-${index}`}
-              draggable={files.length > 1 && !busy}
+              draggable={files.length > 1 && !busy && !cloudBusy}
               onDragStart={(e) =>
                 e.dataTransfer.setData("text/file", String(index))
               }
@@ -199,7 +202,7 @@ export function Workspace({ id }: { id: ToolId }) {
               onDrop={(e) => {
                 e.preventDefault();
                 const value = e.dataTransfer.getData("text/file");
-                if (!value || busy) return;
+                if (!value || busy || cloudBusy) return;
                 const next = [...files],
                   from = Number(value);
                 next.splice(index, 0, next.splice(from, 1)[0]);
@@ -242,7 +245,7 @@ export function Workspace({ id }: { id: ToolId }) {
               </div>
               {tool.input === "image" ? (
                 <ImagePreview
-                  disabled={busy}
+                  disabled={busy || cloudBusy}
                   file={file}
                   crop={id === "crop-image"}
                   s={s}
@@ -253,7 +256,7 @@ export function Workspace({ id }: { id: ToolId }) {
                 />
               ) : (
                 <PdfPreview
-                  disabled={busy}
+                  disabled={busy || cloudBusy}
                   file={file}
                   organize={id === "organize-pdf"}
                   order={s.order}
@@ -268,12 +271,12 @@ export function Workspace({ id }: { id: ToolId }) {
         </fieldset>
         <p className="local-note">
           <ShieldCheck size={16} />
-          Your files stay on this device.
+          Processing stays on this device. Drive transfers are optional.
         </p>
       </section>
       <aside className="settings-panel">
         <h2>Make it your own</h2>
-        <fieldset disabled={busy || adding}>
+        <fieldset disabled={busy || adding || cloudBusy}>
           <SettingsPanel
             id={id}
             s={s}
@@ -284,7 +287,7 @@ export function Workspace({ id }: { id: ToolId }) {
           />
         </fieldset>
         <Button
-          disabled={busy || adding || files.length < tool.minFiles}
+          disabled={busy || adding || cloudBusy || files.length < tool.minFiles}
           onClick={() => void run()}
         >
           {busy ? <LoaderCircle className="spin" size={18} /> : null}
@@ -295,7 +298,11 @@ export function Workspace({ id }: { id: ToolId }) {
             Cancel processing
           </Button>
         )}
-        <Button variant="ghost" disabled={adding || busy} onClick={reset}>
+        <Button
+          variant="ghost"
+          disabled={adding || busy || cloudBusy}
+          onClick={reset}
+        >
           Reset workspace
         </Button>
         <div role="status" aria-live="polite">
@@ -314,6 +321,13 @@ export function Workspace({ id }: { id: ToolId }) {
           </p>
         )}
       </aside>
+      <DriveControls
+        kind={tool.input}
+        outputs={result?.files ?? []}
+        disabled={busy || adding}
+        onImport={add}
+        onBusy={setCloudBusy}
+      />
       {result && (
         <section className="result">
           <div className="panel-heading">
@@ -321,7 +335,7 @@ export function Workspace({ id }: { id: ToolId }) {
               <p className="eyebrow">Ready when you are</p>
               <h2>Your files, freshly forged.</h2>
             </div>
-            <Button disabled={busy} onClick={() => void saveAll()}>
+            <Button disabled={busy || cloudBusy} onClick={() => void saveAll()}>
               <Download size={18} />
               {result.files.length > 1 ? "Download ZIP" : "Download result"}
             </Button>

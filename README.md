@@ -1,12 +1,12 @@
 # FolioForge
 
-A privacy-first PDF and image workspace. Files are processed in the browser, without accounts, uploads, databases or tracking.
+A privacy-first PDF and image workspace. Files are processed in the browser, without mandatory accounts, databases or tracking. Optional Google Drive storage transfers chosen files directly between your browser and Google.
 
 Live application: **https://folioforge-rose.vercel.app**
 
 ## Tools
 
-New browser-only tools: English OCR for images and scanned PDFs (plain-text export), scanned-PDF compression through JPEG rasterization, permanent rectangular PDF redaction through full-document rasterization, page numbers/headers/footers, and image brightness/contrast/saturation adjustments. OCR assets are self-hosted; no documents are uploaded. See [EXTENSION_STATUS.md](EXTENSION_STATUS.md) for the implemented subset and outstanding requests.
+New browser-only tools: English OCR for images and scanned PDFs (plain-text export), scanned-PDF compression through JPEG rasterization, permanent rectangular PDF redaction through full-document rasterization, page numbers/headers/footers, and image brightness/contrast/saturation adjustments. OCR assets are self-hosted; processing never uploads documents. See [EXTENSION_STATUS.md](EXTENSION_STATUS.md) for the implemented subset and outstanding requests.
 
 | PDF                                     | Images                                     |
 | --------------------------------------- | ------------------------------------------ |
@@ -70,7 +70,7 @@ After deployment, smoke-test a PDF merge and image resize, verify downloaded out
 
 ## Privacy and limits
 
-Files stay in browser memory and are never stored in localStorage, sessionStorage or IndexedDB. No application code sends selected document contents over the network. Only normal application/static asset requests reach the host. Object URLs, workers and PDF loading tasks are cleaned up after use. Theme selection is in-memory only.
+Working files and access tokens stay in browser memory and are never stored by FolioForge in localStorage, sessionStorage or IndexedDB. Guest processing sends no document contents over the network. Optional Google Drive storage uses direct Google API requests after explicit user action. Only normal application/static asset requests reach the host. Object URLs, workers and PDF loading tasks are cleaned up after use. Theme selection is in-memory only.
 
 Limits: 30 inputs where batching is supported, 50 MiB per input, 150 MiB total input, 500 PDF pages, and 32 million image/render pixels. Limits are centralized in `src/lib/validation.ts`. Jobs run sequentially to constrain memory; actual device capacity may be lower. Image headers are inspected before full native decoding. Unusual JPEG headers beyond the 256 KiB inspection window must be re-exported.
 
@@ -97,3 +97,7 @@ Dependency audit findings and verified delivery results are recorded in `VERIFIC
 ## Contributing
 
 Use a feature branch, include tests that decode outputs, preserve privacy boundaries, and run the quality commands before opening a pull request. Report security issues privately as described in SECURITY.md.
+
+## Optional Google Drive
+
+See [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md) for Cloud Console configuration, restricted public credentials, Vercel environment variables, and the real-account verification checklist. Guest mode requires none of these. The integration uses only `drive.file`, official GIS/Picker, and resumable uploads; all processing remains local. Google Drive is disabled until all three public values are configured.

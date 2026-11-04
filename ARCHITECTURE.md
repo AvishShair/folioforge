@@ -1,6 +1,6 @@
 # FolioForge architecture
 
-FolioForge is a modular browser-local monolith. Next.js App Router pre-renders the homepage, informational content, and 14 tool routes. There are no API routes, database, credentials, or file-storage services.
+FolioForge is a modular browser-local monolith. Next.js App Router pre-renders the homepage, informational content, and 20 tool routes. There are no API routes, database, server credentials, or server file-storage services.
 
 ## Boundaries
 
@@ -32,3 +32,9 @@ Uploads and outputs stay in React state/browser memory. No storage API persists 
 ## Extension contract
 
 Add a typed registry entry, settings validation, a handler producing `ProcessingResult`, controls, help copy and real output tests. Do not add advertised tools before their output is verifiably valid. Avoid putting document libraries into the homepage bundle.
+
+## Storage providers
+
+`src/lib/storage/types.ts` defines the optional `StorageProvider` boundary. Google Drive implements browser authorization, single-file Picker, bounded downloads, and resumable saves; future OneDrive/Dropbox providers can implement the same contract without changing processing engines. `DriveControls` owns the provider for one tool workspace and sends downloaded Files through existing validation. Guest workflows never load Google scripts.
+
+Every save reserves a fresh Drive ID; the provider never receives an original file ID for saving. Upload state is a WeakMap keyed by output Blob and Drive permission ID (no extra identity scope). One-MiB chunks use server-acknowledged progress. Interrupted requests trigger status probes and bounded backoff; Retry checks the reserved ID before resuming, including a lost completion response. Reconnect to a different account gets an independent output ID. No sessions survive disconnect, navigation, or reload. No backend receives tokens, file metadata, or contents.
