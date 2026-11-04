@@ -26,6 +26,8 @@ The full audit reports the minimatch glob-amplification advisory (`GHSA-g3hv-75w
 
 ## Deployment status
 
-Vercel compatibility is established by a successful Next.js production build with browser-only processing and no persistent server filesystem. Vercel CLI was not installed in this environment and no project link was present. No Vercel deployment or production URL has been verified. Import the GitHub repository into an authenticated Vercel account using the README instructions, then run production smoke tests.
+Vercel production is live at **https://folioforge-rose.vercel.app**. The cloud build succeeded with Node.js 24, `npm ci`, and `npm run build`. The public homepage returned HTTP 200. All eight Playwright workflows passed against the deployed site, including actual PDF/image operations and decoded downloads, in 29.6 seconds. No uncaught homepage client errors were recorded.
 
-GitHub Actions is configured; its remote run must be checked separately from local results.
+The Vercel project is linked to `AvishShair/folioforge`, production branch `main`. Production `NEXT_PUBLIC_SITE_URL` points to the public domain for sitemap/canonical generation. CLI credentials and project-local OIDC environment files remain ignored and are not committed.
+
+GitHub Actions run https://github.com/AvishShair/folioforge/actions/runs/41820784739 passed all checks on Linux with Node.js 24, including the production build and eight browser workflows.

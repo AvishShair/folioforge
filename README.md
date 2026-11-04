@@ -2,18 +2,20 @@
 
 A privacy-first PDF and image workspace. Files are processed in the browser, without accounts, uploads, databases or tracking.
 
+Live application: **https://folioforge-rose.vercel.app**
+
 ## Tools
 
-| PDF | Images |
-| --- | --- |
-| Merge ordered documents | Compress with format/quality controls |
-| Split ranges or individual pages | Resize with aspect and upscaling controls |
-| Rotate selected pages | Convert JPEG, PNG and WebP |
-| Images to A4, Letter or image-sized PDF | Rotate and flip |
-| PDF pages to PNG/JPEG | Interactive crop with numeric alternatives |
-| Text watermarks | Batch resize/rotate/convert and ZIP |
-| Visual page organizer | Actual input/output size reporting |
-| Metadata and page geometry viewer | Partial batch success reporting |
+| PDF                                     | Images                                     |
+| --------------------------------------- | ------------------------------------------ |
+| Merge ordered documents                 | Compress with format/quality controls      |
+| Split ranges or individual pages        | Resize with aspect and upscaling controls  |
+| Rotate selected pages                   | Convert JPEG, PNG and WebP                 |
+| Images to A4, Letter or image-sized PDF | Rotate and flip                            |
+| PDF pages to PNG/JPEG                   | Interactive crop with numeric alternatives |
+| Text watermarks                         | Batch resize/rotate/convert and ZIP        |
+| Visual page organizer                   | Actual input/output size reporting         |
+| Metadata and page geometry viewer       | Partial batch success reporting            |
 
 All tools have individual static routes, validation, reset, downloads and local processing feedback. Multiple outputs export as ZIP. Themes, keyboard reordering and responsive layouts are included.
 
@@ -56,11 +58,13 @@ npm run build
 npm start
 ```
 
-Import `AvishShair/folioforge` into Vercel, choose the Next.js preset and Node.js 24, and retain the default install command (`npm ci`) and build command (`npm run build`). No filesystem persistence or backend services are required. The build uses supported Webpack because this Windows environment's Turbopack/Tailwind child process crashed.
+The repository is connected to Vercel project `folioforge` in `avishs-projects-0b8a4aa2`, with production branch `main`, Next.js preset, and Node.js 24. `vercel.json` pins installation to `npm ci` and building to `npm run build`. No filesystem persistence or backend services are required. The build uses supported Webpack because this Windows environment's Turbopack/Tailwind child process crashed.
 
 Set optional `NEXT_PUBLIC_SITE_URL` to the real HTTPS production origin (no trailing slash), then rebuild to enable canonical URLs and the sitemap. `.env.example` contains a local example; no invented production hostname is embedded. Without this setting, sitemap entries and canonical links are omitted.
 
 After deployment, smoke-test a PDF merge and image resize, verify downloaded outputs, and confirm `/pdf.worker.min.mjs` loads. With an authenticated Vercel CLI, `vercel --prod` can deploy from this directory. A local build is not proof of a successful remote deployment.
+
+`NEXT_PUBLIC_SITE_URL` is configured in Vercel Production as `https://folioforge-rose.vercel.app`. To run the same browser suite against a deployed site, set `PLAYWRIGHT_BASE_URL` to its origin before running `npm run test:e2e`; this skips starting a local server. Use synthetic fixtures only. `.vercel/` and `.env.local` are local-only and must not be committed. If CLI login stalls opening a browser on Windows, run it with `CI=1` and manually open its device authorization URL.
 
 ## Privacy and limits
 
