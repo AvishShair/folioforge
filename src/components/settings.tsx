@@ -59,9 +59,103 @@ export function SettingsPanel({
     </label>
   );
   const image =
-    id.includes("image") && id !== "images-to-pdf" && id !== "pdf-to-images";
+    id.includes("image") &&
+    id !== "ocr-image" &&
+    id !== "images-to-pdf" &&
+    id !== "pdf-to-images";
   return (
     <div className="settings-fields">
+      {(id === "ocr-image" || id === "ocr-pdf") && (
+        <p className="hint">
+          English printed text recognition runs locally. The first use downloads
+          the OCR engine and language model from this site; your document is
+          never uploaded. Proofread results. Output is plain text, not a
+          searchable PDF.
+        </p>
+      )}
+      {id === "ocr-pdf" && (
+        <>
+          <label>
+            Pages (blank for all)
+            <input
+              value={s.pages}
+              onChange={(e) => update("pages", e.target.value)}
+            />
+          </label>
+          {number("Render scale", "scale", 0.5, 3, 0.5)}
+        </>
+      )}
+      {(id === "compress-pdf" || id === "redact-pdf") && (
+        <>
+          {number("Render scale", "scale", 0.5, 3, 0.5)}
+          {id === "compress-pdf" &&
+            number("JPEG quality (0.1–1)", "quality", 0.1, 1, 0.05)}
+          <p className="hint">
+            All pages become images. Searchable text, forms, links, signatures,
+            tags, and metadata are removed. Keep the original and inspect the
+            exported document.
+          </p>
+        </>
+      )}
+      {id === "redact-pdf" && (
+        <>
+          <label>
+            Pages to redact (blank for all)
+            <input
+              value={s.pages}
+              onChange={(e) => update("pages", e.target.value)}
+              placeholder="1-3, 5"
+            />
+          </label>
+          {number("Redaction left (%)", "cropX", 0, 99, 0.1)}
+          {number("Redaction top (%)", "cropY", 0, 99, 0.1)}
+          {number("Redaction width (%)", "cropWidth", 1, 100, 0.1)}
+          {number("Redaction height (%)", "cropHeight", 1, 100, 0.1)}
+          <p className="hint">
+            Coordinates use the displayed page’s top-left. The default covers
+            the entire page. The same area is removed from each selected page.
+            Unselected pages are still rasterized.
+          </p>
+        </>
+      )}
+      {id === "number-pages" && (
+        <>
+          <label>
+            Header
+            <input
+              value={s.header}
+              maxLength={120}
+              onChange={(e) => update("header", e.target.value)}
+            />
+          </label>
+          <label>
+            Footer
+            <input
+              value={s.footer}
+              maxLength={120}
+              onChange={(e) => update("footer", e.target.value)}
+            />
+          </label>
+          {number("First page number", "firstNumber", 1, 100000)}
+          <p className="hint">
+            Use {"{page}"} for the page number and {"{total}"} for total pages.
+            Text is centered in the unrotated page coordinates. Latin text only.
+            Existing content is preserved; check for overlap.
+          </p>
+        </>
+      )}
+      {id === "enhance-image" && (
+        <>
+          {number("Brightness (1 = unchanged)", "brightness", 0.1, 3, 0.1)}
+          {number("Contrast (1 = unchanged)", "contrast", 0.1, 3, 0.1)}
+          {number("Saturation (0 = grayscale)", "saturation", 0, 3, 0.1)}
+          <p className="hint">
+            Color adjustments only; this does not reconstruct detail or provide
+            AI super-resolution. Use Resize Image with Allow upscaling for
+            interpolation-based enlargement.
+          </p>
+        </>
+      )}
       {["split-pdf", "rotate-pdf", "watermark-pdf", "pdf-to-images"].includes(
         id,
       ) && (

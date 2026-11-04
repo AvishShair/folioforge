@@ -69,6 +69,13 @@ export async function processImage(id: ToolId, file: File, s: Settings) {
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+    if (id === "enhance-image") {
+      if (!("filter" in ctx))
+        throw new Error(
+          "Image adjustments are not supported by this browser. Try a current Chrome, Edge, or Firefox.",
+        );
+      ctx.filter = `brightness(${s.brightness}) contrast(${s.contrast}) saturate(${s.saturation})`;
+    }
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate((angle * Math.PI) / 180);
     if (id === "rotate-image" || id === "batch-images")

@@ -38,7 +38,42 @@ export async function processPdf(
   const selection = [
     ...new Set(pageRanges(s.pages, doc.getPageCount()).flat()),
   ];
-  if (id === "merge-pdf") {
+  if (id === "number-pages") {
+    if (!s.header.trim() && !s.footer.trim())
+      throw new Error("Enter a header or footer.");
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    for (const [i, page] of doc.getPages().entries()) {
+      context.signal.throwIfAborted();
+      for (const [template, top] of [
+        [s.header, true],
+        [s.footer, false],
+      ] as const) {
+        if (!template) continue;
+        const text = template
+          .replaceAll("{page}", String(i + s.firstNumber))
+          .replaceAll("{total}", String(doc.getPageCount()));
+        const size = 12,
+          width = font.widthOfTextAtSize(text, size);
+        if (width > page.getWidth() - 32 || page.getHeight() < 60)
+          throw new Error(
+            "Header or footer does not fit this page. Shorten the text or use a larger page.",
+          );
+        page.drawText(text, {
+          font,
+          size,
+          x: (page.getWidth() - width) / 2,
+          y: top ? page.getHeight() - 26 : 16,
+          color: rgb(0.15, 0.15, 0.15),
+        });
+      }
+      context.onProgress?.(
+        i + 1,
+        doc.getPageCount(),
+        "Adding headers and page numbers",
+      );
+    }
+    await save(doc, "numbered.pdf");
+  } else if (id === "merge-pdf") {
     const merged = await PDFDocument.create();
     for (let i = 0; i < files.length; i++) {
       context.signal.throwIfAborted();

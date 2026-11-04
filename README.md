@@ -6,6 +6,8 @@ Live application: **https://folioforge-rose.vercel.app**
 
 ## Tools
 
+New browser-only tools: English OCR for images and scanned PDFs (plain-text export), scanned-PDF compression through JPEG rasterization, permanent rectangular PDF redaction through full-document rasterization, page numbers/headers/footers, and image brightness/contrast/saturation adjustments. OCR assets are self-hosted; no documents are uploaded. See [EXTENSION_STATUS.md](EXTENSION_STATUS.md) for the implemented subset and outstanding requests.
+
 | PDF                                     | Images                                     |
 | --------------------------------------- | ------------------------------------------ |
 | Merge ordered documents                 | Compress with format/quality controls      |
@@ -83,7 +85,8 @@ Limits: 30 inputs where batching is supported, 50 MiB per input, 150 MiB total i
 - Native image encoding and Canvas rendering remain on the main thread for compatibility. Cancel stops between native operations; an in-flight codec call cannot be interrupted.
 - Codec behavior and memory limits vary by browser. Automated browser coverage currently targets Chromium; Firefox/Safari require separate validation.
 - ZIP packaging needs additional memory and uses STORE to avoid wasting CPU recompressing already-compressed files.
-- No Office conversion, PDF-to-Word, OCR, password unlocking or PDF compression is advertised.
+- Office conversion, password unlocking, and lossless/vector-preserving PDF optimization are not supported. Scanned-PDF compression is lossy rasterization and may increase size. Rasterization removes searchable text, forms, links, signatures, source metadata, and accessibility tags. Redaction applies a rectangle to selected pages, but rebuilds all pages. Inspect exported pages before sharing.
+- OCR recognizes English printed text and exports plain text; it does not preserve layout or create searchable PDFs. Image enhancement adjusts color; it is not AI detail reconstruction.
 
 ## Troubleshooting
 

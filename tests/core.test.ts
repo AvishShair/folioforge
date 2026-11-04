@@ -65,7 +65,7 @@ describe("validation", () => {
     ).rejects.toThrow();
   });
   it("validates settings and registry", () => {
-    expect(new Set(tools.map((t) => t.id)).size).toBe(14);
+    expect(new Set(tools.map((t) => t.id)).size).toBe(20);
     for (const tool of tools) {
       expect(tool.route).toBe(`/tools/${tool.id}`);
       expect(tool.handler).toBeTypeOf("function");

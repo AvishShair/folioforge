@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, PDFName, PDFDict } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 import JSZip from "jszip";
 async function pdf() {
@@ -46,6 +46,136 @@ async function decode(page: Page, buffer: Buffer) {
     return result;
   }, Array.from(buffer));
 }
+
+test("page labels, image enhancement, PDF compression and permanent raster redaction", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/tools/number-pages");
+  const original = await PDFDocument.create();
+  original.setTitle("PRIVATE METADATA");
+  original
+    .addPage([300, 400])
+    .drawText("PRIVATE CONTENT", { x: 40, y: 200, size: 18 });
+  const input = Buffer.from(await original.save());
+  const upload = async () =>
+    page.locator("input[type=file]").setInputFiles({
+      name: "source.pdf",
+      mimeType: "application/pdf",
+      buffer: input,
+    });
+  await upload();
+  await page.getByLabel("Header", { exact: true }).fill("Report");
+  const numbered = await PDFDocument.load(await runDownload(page));
+  expect(numbered.getPageCount()).toBe(1);
+  expect(numbered.getTitle()).toBe("PRIVATE METADATA");
+  await page.goto("/tools/enhance-image");
+  const image = await png(page);
+  await page.locator("input[type=file]").setInputFiles({
+    name: "source.png",
+    mimeType: "image/png",
+    buffer: image,
+  });
+  await page.getByLabel("Saturation (0 = grayscale)").fill("0");
+  const enhanced = await runDownload(page);
+  const gray = await page.evaluate(async (values) => {
+    const image = await createImageBitmap(new Blob([new Uint8Array(values)]));
+    const c = document.createElement("canvas");
+    c.width = image.width;
+    c.height = image.height;
+    const ctx = c.getContext("2d")!;
+    ctx.drawImage(image, 0, 0);
+    const p = Array.from(ctx.getImageData(0, 0, 1, 1).data);
+    image.close();
+    return p;
+  }, Array.from(enhanced));
+  expect(gray[0]).toBe(gray[1]);
+  expect(gray[1]).toBe(gray[2]);
+  expect(gray[3]).toBe(255);
+  for (const slug of ["compress-pdf", "redact-pdf"]) {
+    await page.goto(`/tools/${slug}`);
+    await upload();
+    const output = await runDownload(page);
+    const doc = await PDFDocument.load(output);
+    expect(doc.getTitle()).toBeUndefined();
+    expect(doc.getPageCount()).toBe(1);
+    expect(doc.getPage(0).getWidth()).toBe(300);
+    expect(
+      doc
+        .getPage(0)
+        .node.Resources()
+        ?.lookup(PDFName.of("Font"), PDFDict)
+        .keys().length,
+    ).toBe(0);
+    if (slug === "redact-pdf") {
+      await page.goto("/tools/pdf-to-images");
+      await page.locator("input[type=file]").setInputFiles({
+        name: "redacted.pdf",
+        mimeType: "application/pdf",
+        buffer: output,
+      });
+      expect((await decode(page, await runDownload(page))).pixel).toEqual([
+        0, 0, 0, 255,
+      ]);
+    }
+  }
+});
+
+test("private English OCR recognizes images and scanned PDF pages", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  await page.goto("/tools/ocr-image");
+  const data = Buffer.from(
+    await page.evaluate(async () => {
+      const c = document.createElement("canvas");
+      c.width = 800;
+      c.height = 180;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, 800, 180);
+      ctx.fillStyle = "black";
+      ctx.font = "48px Arial";
+      ctx.fillText("FOLIOFORGE 12345", 30, 100);
+      const b = await new Promise<Blob>((r) => c.toBlob((b) => r(b!)));
+      return Array.from(new Uint8Array(await b.arrayBuffer()));
+    }),
+  );
+  await page
+    .locator("input[type=file]")
+    .setInputFiles({ name: "scan.png", mimeType: "image/png", buffer: data });
+  await page.getByRole("button", { name: /^Run / }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your files, freshly forged." }),
+  ).toBeVisible({ timeout: 90000 });
+  let pending = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download result" }).click();
+  expect(
+    (await readFile((await (await pending).path())!)).toString(),
+  ).toContain("12345");
+  const pdf = await PDFDocument.create(),
+    image = await pdf.embedPng(data);
+  pdf
+    .addPage([800, 180])
+    .drawImage(image, { x: 0, y: 0, width: 800, height: 180 });
+  await page.goto("/tools/ocr-pdf");
+  await page
+    .locator("input[type=file]")
+    .setInputFiles({
+      name: "scan.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from(await pdf.save()),
+    });
+  await page.getByRole("button", { name: /^Run / }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your files, freshly forged." }),
+  ).toBeVisible({ timeout: 90000 });
+  pending = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download result" }).click();
+  expect(
+    (await readFile((await (await pending).path())!)).toString(),
+  ).toContain("FOLIOFORGE");
+});
 test("home search, navigation, theme, keyboard, and mobile", async ({
   page,
 }) => {
@@ -192,13 +322,11 @@ test("remaining PDF tools process real files and organizer exports selected orde
 }) => {
   const data = await pdf();
   const upload = async () =>
-    page
-      .locator("input[type=file]")
-      .setInputFiles({
-        name: "sample.pdf",
-        mimeType: "application/pdf",
-        buffer: data,
-      });
+    page.locator("input[type=file]").setInputFiles({
+      name: "sample.pdf",
+      mimeType: "application/pdf",
+      buffer: data,
+    });
   await page.goto("/tools/split-pdf");
   await upload();
   await page.getByLabel("Split mode").selectOption("individual");
@@ -240,13 +368,11 @@ test("remaining PDF tools process real files and organizer exports selected orde
   expect((await PDFDocument.load(watermarked)).getPageCount()).toBe(2);
   // Re-render the produced PDF and verify visible marks were added to the blank fixture.
   await page.goto("/tools/pdf-to-images");
-  await page
-    .locator("input[type=file]")
-    .setInputFiles({
-      name: "marked.pdf",
-      mimeType: "application/pdf",
-      buffer: watermarked,
-    });
+  await page.locator("input[type=file]").setInputFiles({
+    name: "marked.pdf",
+    mimeType: "application/pdf",
+    buffer: watermarked,
+  });
   await page.getByLabel("Pages (blank for all)").fill("1");
   const rendered = await runDownload(page);
   const ink = await page.evaluate(async (values) => {
@@ -282,25 +408,21 @@ test("image codecs, compression and partial batch failure", async ({
   const source = await png(page);
   for (const format of ["image/webp", "image/jpeg", "image/png"]) {
     await page.goto("/tools/convert-image");
-    await page
-      .locator("input[type=file]")
-      .setInputFiles({
-        name: "source.png",
-        mimeType: "image/png",
-        buffer: source,
-      });
+    await page.locator("input[type=file]").setInputFiles({
+      name: "source.png",
+      mimeType: "image/png",
+      buffer: source,
+    });
     await page.getByLabel("Output format").selectOption(format);
     const output = await runDownload(page);
     expect((await decode(page, output)).width).toBe(100);
     if (format !== "image/png") {
       await page.goto("/tools/convert-image");
-      await page
-        .locator("input[type=file]")
-        .setInputFiles({
-          name: format === "image/webp" ? "input.webp" : "input.jpg",
-          mimeType: format,
-          buffer: output,
-        });
+      await page.locator("input[type=file]").setInputFiles({
+        name: format === "image/webp" ? "input.webp" : "input.jpg",
+        mimeType: format,
+        buffer: output,
+      });
       await page.getByLabel("Output format").selectOption("image/png");
       expect((await decode(page, await runDownload(page))).width).toBe(100);
     }

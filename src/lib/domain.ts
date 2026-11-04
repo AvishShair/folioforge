@@ -2,6 +2,12 @@ import { z } from "zod";
 
 export const settingsSchema = z
   .object({
+    header: z.string().max(120).default(""),
+    footer: z.string().max(120).default("Page {page} of {total}"),
+    firstNumber: z.coerce.number().int().min(1).max(100000).default(1),
+    brightness: z.coerce.number().min(0.1).max(3).default(1),
+    contrast: z.coerce.number().min(0.1).max(3).default(1),
+    saturation: z.coerce.number().min(0).max(3).default(1),
     pages: z.string().default(""),
     splitMode: z.enum(["ranges", "individual"]).default("ranges"),
     angle: z.coerce
@@ -54,6 +60,54 @@ export interface ProcessingContext {
   onProgress?: (completed: number, total: number, message: string) => void;
 }
 export const definitions = [
+  [
+    "ocr-image",
+    "Image to Text (OCR)",
+    "Recognize English printed text locally and download a text file.",
+    "image",
+    1,
+    1,
+  ],
+  [
+    "ocr-pdf",
+    "Scanned PDF to Text",
+    "Recognize English printed text from selected scanned PDF pages.",
+    "pdf",
+    1,
+    1,
+  ],
+  [
+    "compress-pdf",
+    "Compress Scanned PDF",
+    "Rebuild pages as JPEG images. Searchable text and interactive features are flattened.",
+    "pdf",
+    1,
+    1,
+  ],
+  [
+    "redact-pdf",
+    "Redact PDF Area",
+    "Permanently remove a rectangular area by rebuilding every page from pixels.",
+    "pdf",
+    1,
+    1,
+  ],
+  [
+    "number-pages",
+    "Page Numbers & Headers",
+    "Add custom headers, footers, and sequential page numbers.",
+    "pdf",
+    1,
+    1,
+  ],
+  [
+    "enhance-image",
+    "Enhance Image",
+    "Adjust brightness, contrast, and saturation locally.",
+    "image",
+    1,
+    30,
+  ],
   [
     "merge-pdf",
     "Merge PDF",
@@ -181,23 +235,31 @@ export const tools = definitions.map(
     accepted: input === "pdf" ? ".pdf" : ".jpg,.jpeg,.png,.webp",
     settingsSchema,
     outputType:
-      id === "pdf-metadata"
-        ? "json"
-        : id === "pdf-to-images" ||
-            (input === "image" && id !== "images-to-pdf")
-          ? "image"
-          : "pdf",
+      id === "ocr-image" || id === "ocr-pdf"
+        ? "text"
+        : id === "pdf-metadata"
+          ? "json"
+          : id === "pdf-to-images" ||
+              (input === "image" && id !== "images-to-pdf")
+            ? "image"
+            : "pdf",
     capabilities: ["Local processing", "Downloadable output"],
     limitations:
-      input === "pdf"
+      id === "compress-pdf" || id === "redact-pdf"
         ? [
-            "Encrypted PDFs are not supported.",
-            "Editing can invalidate signatures and discard interactive document features.",
+            "Every page is rasterized. Searchable text, links, forms, signatures, metadata, and accessibility tags are removed.",
+            "Area coordinates are percentages of the displayed page, measured from its top-left.",
+            "Compression can increase file size. Inspect all output pages before sharing.",
           ]
-        : [
-            "Animated images export as a single frame.",
-            "JPEG output uses a white background.",
-          ],
+        : input === "pdf"
+          ? [
+              "Encrypted PDFs are not supported.",
+              "Editing can invalidate signatures and discard interactive document features.",
+            ]
+          : [
+              "Animated images export as a single frame.",
+              "JPEG output uses a white background.",
+            ],
     handler: async (
       files: File[],
       settings: Settings,

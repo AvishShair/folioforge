@@ -25,6 +25,13 @@ export async function processFiles(
     context.signal.throwIfAborted();
     await validateFile(file, tool.input);
   }
+  if (id === "ocr-image" || id === "ocr-pdf") {
+    return (await import("./ocr")).recognizeText(id, files[0], s, context);
+  }
+  if (id === "compress-pdf" || id === "redact-pdf") {
+    const { rasterPdf } = await import("./raster-pdf");
+    return rasterPdf(id, files[0], s, context);
+  }
   if (tool.input === "pdf" && id !== "pdf-to-images") {
     if (typeof Worker !== "function")
       throw new Error(

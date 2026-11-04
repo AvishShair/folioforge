@@ -69,13 +69,14 @@ export function ToolCatalog() {
             onClick={() => setCategory(c)}
           >
             {c}
-            {c === "All tools" && <span>14</span>}
+            {c === "All tools" && <span>{tools.length}</span>}
           </button>
         ))}
       </div>
       <div className="tool-grid">
         {filtered.map((t) => {
-          const Icon = icons[tools.indexOf(t)];
+          const Icon =
+            icons[(tools.indexOf(t) + icons.length - 6) % icons.length];
           return (
             <Link href={t.route} key={t.id} className="tool-card">
               <div className="card-top">

@@ -331,7 +331,10 @@ export function Workspace({ id }: { id: ToolId }) {
             {bytes(result.files.reduce((n, f) => n + f.blob.size, 0))} ·{" "}
             {(result.durationMs / 1000).toFixed(2)} seconds
           </p>
-          {tool.input === "image" && id !== "images-to-pdf" && (
+          {((tool.input === "image" &&
+            id !== "images-to-pdf" &&
+            id !== "ocr-image") ||
+            id === "compress-pdf") && (
             <p>
               Successful inputs:{" "}
               {bytes(
